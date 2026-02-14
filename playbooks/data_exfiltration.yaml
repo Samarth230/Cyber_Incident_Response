@@ -1,0 +1,67 @@
+name: "Data Exfiltration Response"
+description: "Response playbook for data exfiltration incidents"
+
+steps:
+  - phase: "Immediate Actions"
+    actions:
+      - action: "Disable compromised account"
+        description: "Disable account: {user}"
+        command: "Disable-ADAccount -Identity {user}"
+        requires_approval: true
+        
+      - action: "Block external destinations"
+        description: "Block connections to exfiltration destinations"
+        requires_approval: true
+        
+      - action: "Revoke cloud access"
+        description: "Revoke OAuth tokens and API keys for user"
+        requires_approval: true
+  
+  - phase: "Investigation"
+    actions:
+      - action: "Identify exfiltrated data"
+        description: "Determine what data was accessed and copied"
+        query: "index=data_access user={user} action=download OR action=copy"
+        
+      - action: "Map data flow"
+        description: "Trace data from source to destination"
+        
+      - action: "Check for staging"
+        description: "Look for compressed/archived data"
+        query: "index=file_activity action=compress user={user}"
+  
+  - phase: "Containment"
+    actions:
+      - action: "Isolate affected systems"
+        description: "Network isolate systems: {hosts}"
+        requires_approval: true
+        
+      - action: "Contact external providers"
+        description: "Contact Dropbox/Gmail/etc to request data removal"
+  
+  - phase: "Eradication"
+    actions:
+      - action: "Remove access"
+        description: "Revoke all access to sensitive data for user"
+        
+      - action: "Rotate credentials"
+        description: "Rotate any exposed API keys or passwords"
+  
+  - phase: "Recovery"
+    actions:
+      - action: "Assess data exposure"
+        description: "Determine classification and sensitivity of data"
+        
+      - action: "Notification requirements"
+        description: "Determine if breach notification required (GDPR/HIPAA)"
+  
+  - phase: "Post-Incident"
+    actions:
+      - action: "Implement DLP"
+        description: "Deploy Data Loss Prevention controls"
+        
+      - action: "Review access controls"
+        description: "Audit and restrict access to sensitive data"
+        
+      - action: "User behavior monitoring"
+        description: "Enhanced UEBA monitoring for insider threats"

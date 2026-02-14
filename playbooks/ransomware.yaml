@@ -1,0 +1,69 @@
+name: "Ransomware Response"
+description: "Response playbook for ransomware incidents"
+
+steps:
+  - phase: "Immediate Actions"
+    actions:
+      - action: "Isolate infected systems"
+        description: "Immediately isolate hosts: {hosts}"
+        command: "Invoke-EDRIsolation -ComputerName {host}"
+        requires_approval: true
+        priority: "CRITICAL"
+        
+      - action: "Preserve evidence"
+        description: "DO NOT power off systems - preserve for forensics"
+        
+      - action: "Disable affected accounts"
+        description: "Disable user accounts on infected systems"
+        requires_approval: true
+  
+  - phase: "Investigation"
+    actions:
+      - action: "Identify patient zero"
+        description: "Find initial infection vector"
+        
+      - action: "Map encryption scope"
+        description: "Identify all encrypted files and systems"
+        
+      - action: "Check backups"
+        description: "Verify backup integrity and availability"
+  
+  - phase: "Containment"
+    actions:
+      - action: "Block C2 communication"
+        description: "Block known C2 domains/IPs at firewall"
+        requires_approval: true
+        
+      - action: "Prevent spread"
+        description: "Isolate network segments if needed"
+        requires_approval: true
+  
+  - phase: "Eradication"
+    actions:
+      - action: "Remove malware"
+        description: "Clean infected systems using EDR"
+        
+      - action: "Patch vulnerabilities"
+        description: "Apply security patches to prevent re-infection"
+  
+  - phase: "Recovery"
+    actions:
+      - action: "Restore from backup"
+        description: "Restore encrypted files from clean backups"
+        
+      - action: "Rebuild systems"
+        description: "Reimage severely affected systems"
+        
+      - action: "Verify restoration"
+        description: "Confirm all systems operational"
+  
+  - phase: "Post-Incident"
+    actions:
+      - action: "Implement email filtering"
+        description: "Enhanced email attachment scanning"
+        
+      - action: "Backup verification"
+        description: "Test backup/restore procedures"
+        
+      - action: "Incident report"
+        description: "Document timeline and lessons learned"

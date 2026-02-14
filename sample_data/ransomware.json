@@ -1,0 +1,68 @@
+[
+  {
+    "timestamp": "2024-02-14T01:15:30Z",
+    "source": "Email Gateway",
+    "action": "email_received",
+    "user": "mbrown",
+    "description": "Email with suspicious attachment received",
+    "file": "invoice_2024.zip",
+    "severity": "low"
+  },
+  {
+    "timestamp": "2024-02-14T01:22:11Z",
+    "source": "EDR",
+    "action": "file_execution",
+    "user": "mbrown",
+    "host": "DESKTOP-XYZ",
+    "process": "invoice_2024.exe",
+    "description": "Executable from email attachment run",
+    "severity": "medium"
+  },
+  {
+    "timestamp": "2024-02-14T01:23:05Z",
+    "source": "EDR",
+    "action": "process_injection",
+    "user": "mbrown",
+    "host": "DESKTOP-XYZ",
+    "process": "svchost.exe",
+    "description": "Process injection detected",
+    "severity": "high"
+  },
+  {
+    "timestamp": "2024-02-14T01:25:33Z",
+    "source": "Firewall",
+    "action": "network_connection",
+    "user": "mbrown",
+    "host": "DESKTOP-XYZ",
+    "ip": "203.0.113.45",
+    "description": "Connection to known C2 server",
+    "severity": "critical"
+  },
+  {
+    "timestamp": "2024-02-14T01:28:12Z",
+    "source": "EDR",
+    "action": "file_encryption",
+    "user": "SYSTEM",
+    "host": "DESKTOP-XYZ",
+    "description": "Mass file encryption activity detected - 1,250 files",
+    "severity": "critical"
+  },
+  {
+    "timestamp": "2024-02-14T01:28:45Z",
+    "source": "File System",
+    "action": "file_created",
+    "user": "SYSTEM",
+    "host": "DESKTOP-XYZ",
+    "file": "README_RANSOM.txt",
+    "description": "Ransom note created",
+    "severity": "critical"
+  },
+  {
+    "timestamp": "2024-02-14T01:30:22Z",
+    "source": "EDR",
+    "action": "lateral_movement",
+    "host": "DESKTOP-XYZ",
+    "description": "SMB connections to 5 other hosts detected",
+    "severity": "critical"
+  }
+]

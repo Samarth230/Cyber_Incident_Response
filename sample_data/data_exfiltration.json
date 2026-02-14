@@ -1,0 +1,52 @@
+[
+  {
+    "timestamp": "2024-02-14T03:12:15Z",
+    "source": "VPN",
+    "action": "vpn_login",
+    "user": "tjones",
+    "ip": "98.142.188.22",
+    "description": "VPN login from home",
+    "severity": "low"
+  },
+  {
+    "timestamp": "2024-02-14T03:15:44Z",
+    "source": "SharePoint",
+    "action": "file_access",
+    "user": "tjones",
+    "file": "Product_Roadmap_2025.pptx",
+    "description": "Accessed confidential product roadmap",
+    "severity": "medium"
+  },
+  {
+    "timestamp": "2024-02-14T03:18:22Z",
+    "source": "SharePoint",
+    "action": "file_download",
+    "user": "tjones",
+    "description": "Downloaded 45 files from Finance folder",
+    "severity": "high"
+  },
+  {
+    "timestamp": "2024-02-14T03:22:11Z",
+    "source": "Database",
+    "action": "query_executed",
+    "user": "tjones",
+    "description": "SELECT * FROM customers - 50,000 records retrieved",
+    "severity": "high"
+  },
+  {
+    "timestamp": "2024-02-14T03:28:55Z",
+    "source": "Cloud Storage",
+    "action": "upload",
+    "user": "tjones",
+    "description": "Uploaded 3.5GB to personal Dropbox account",
+    "severity": "critical"
+  },
+  {
+    "timestamp": "2024-02-14T03:31:12Z",
+    "source": "Email",
+    "action": "email_sent",
+    "user": "tjones",
+    "description": "Email with 10 attachments sent to personal gmail",
+    "severity": "critical"
+  }
+]
