@@ -42,6 +42,7 @@ function App() {
   const [showPlaybook, setShowPlaybook] = useState(false);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [playbook, setPlaybook] = useState<Playbook | null>(null);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   
   // Quick Action states
   const [showThreatHunt, setShowThreatHunt] = useState(false);
@@ -49,9 +50,9 @@ function App() {
   const [showRuleUpdate, setShowRuleUpdate] = useState(false);
   const [showTeamStatus, setShowTeamStatus] = useState(false);
 
-  // Mock incidents data
-  useEffect(() => {
-    setIncidents([
+  // Load initial mock incidents
+  const loadMockIncidents = () => {
+    return [
       {
         id: 'INC-001',
         title: 'Credential Access',
@@ -91,8 +92,28 @@ function App() {
         affected_systems: ['WS-15'],
         timestamp: new Date().toISOString()
       }
-    ]);
+    ];
+  };
+
+  // Initial load
+  useEffect(() => {
+    setIncidents(loadMockIncidents());
   }, []);
+
+  // Refresh data function
+  const handleRefresh = () => {
+    // In production, this would fetch from local dataset
+    // For demo, we'll reload the mock data with updated timestamps
+    setIncidents(loadMockIncidents());
+    setLastRefresh(new Date());
+    
+    // Show visual feedback
+    const btn = document.querySelector('.refresh-btn');
+    if (btn) {
+      btn.classList.add('spinning');
+      setTimeout(() => btn.classList.remove('spinning'), 1000);
+    }
+  };
 
   // Quick Action Handlers
   const handleThreatHunt = () => {
@@ -113,8 +134,6 @@ function App() {
 
   // Fetch playbook when incident is selected
   const handleShowPlaybook = async (incident: Incident) => {
-    // In production, this would fetch from your API
-    // For now, we'll generate a mock playbook based on incident type
     const mockPlaybook: Playbook = {
       name: `${incident.title} Response Playbook`,
       incident_type: incident.title,
@@ -270,6 +289,18 @@ function App() {
     <div className="app">
       <div className="sidebar">
         <h1 className="sidebar-title">SOC Console</h1>
+        
+        {/* Offline Mode Indicator */}
+        <div className="offline-indicator">
+          <div className="offline-status">
+            <span className="status-dot"></span>
+            <span>Offline Mode</span>
+          </div>
+          <div className="offline-description">
+            🔒 Secure - Air-Gapped
+          </div>
+        </div>
+        
         <nav className="sidebar-nav">
           <button 
             className={activeView === 'dashboard' ? 'nav-item active' : 'nav-item'}
@@ -307,6 +338,8 @@ function App() {
             onGenerateReport={handleGenerateReport}
             onUpdateRules={handleUpdateRules}
             onTeamStatus={handleTeamStatus}
+            onRefresh={handleRefresh}
+            lastRefresh={lastRefresh}
           />
         )}
         
@@ -316,12 +349,14 @@ function App() {
             selectedIncident={selectedIncident}
             onIncidentClick={setSelectedIncident}
             onShowPlaybook={handleShowPlaybook}
+            onRefresh={handleRefresh}
+            lastRefresh={lastRefresh}
           />
         )}
         
-        {activeView === 'threatintel' && <ThreatIntelView />}
+        {activeView === 'threatintel' && <ThreatIntelView onRefresh={handleRefresh} lastRefresh={lastRefresh} />}
         
-        {activeView === 'analytics' && <AnalyticsView />}
+        {activeView === 'analytics' && <AnalyticsView onRefresh={handleRefresh} lastRefresh={lastRefresh} />}
       </div>
 
       {/* Playbook Modal */}
@@ -330,6 +365,7 @@ function App() {
           playbook={playbook}
           incident={selectedIncident}
           onClose={() => setShowPlaybook(false)}
+          onRefresh={handleRefresh}
         />
       )}
 
@@ -465,14 +501,18 @@ function DashboardView({
   onThreatHunt,
   onGenerateReport,
   onUpdateRules,
-  onTeamStatus
+  onTeamStatus,
+  onRefresh,
+  lastRefresh
 }: { 
   incidents: Incident[], 
   onIncidentClick: (incident: Incident) => void,
   onThreatHunt: () => void,
   onGenerateReport: () => void,
   onUpdateRules: () => void,
-  onTeamStatus: () => void
+  onTeamStatus: () => void,
+  onRefresh: () => void,
+  lastRefresh: Date
 }) {
   const activeIncidents = incidents.filter(i => i.status === 'Active').length;
   const criticalIncidents = incidents.filter(i => i.priority === 'P1').length;
@@ -482,7 +522,14 @@ function DashboardView({
     <div className="dashboard-view">
       <div className="header">
         <h1>Security Operations Center</h1>
-        <div className="timestamp">{new Date().toLocaleTimeString()}</div>
+        <div style={{display: 'flex', alignItems: 'center', gap: '16px'}}>
+          <div className="timestamp">
+            Last updated: {lastRefresh.toLocaleTimeString()}
+          </div>
+          <button className="refresh-btn" onClick={onRefresh} title="Refresh data">
+            🔄
+          </button>
+        </div>
       </div>
 
       {/* Key Metrics */}
@@ -505,7 +552,8 @@ function DashboardView({
         </div>
       </div>
 
-            <div className="section">
+      {/* Banking-Specific Monitoring */}
+      <div className="section">
         <h2>Banking-Specific Monitoring</h2>
         <div className="metrics-grid">
           <div className="metric-card">
@@ -583,17 +631,21 @@ function DashboardView({
   );
 }
 
-// Incidents View Component (keeping your existing code)
+// Incidents View Component
 function IncidentsView({ 
   incidents, 
   selectedIncident, 
   onIncidentClick,
-  onShowPlaybook 
+  onShowPlaybook,
+  onRefresh,
+  lastRefresh
 }: { 
   incidents: Incident[], 
   selectedIncident: Incident | null,
   onIncidentClick: (incident: Incident | null) => void,
-  onShowPlaybook: (incident: Incident) => void
+  onShowPlaybook: (incident: Incident) => void,
+  onRefresh: () => void,
+  lastRefresh: Date
 }) {
   const [filter, setFilter] = useState('All');
 
@@ -607,11 +659,19 @@ function IncidentsView({
         <>
           <div className="header">
             <h1>Incident Management</h1>
-            <input 
-              type="search" 
-              placeholder="Search incidents..." 
-              className="search-input"
-            />
+            <div style={{display: 'flex', alignItems: 'center', gap: '16px'}}>
+              <input 
+                type="search" 
+                placeholder="Search incidents..." 
+                className="search-input"
+              />
+              <div className="timestamp">
+                Last updated: {lastRefresh.toLocaleTimeString()}
+              </div>
+              <button className="refresh-btn" onClick={onRefresh} title="Refresh incidents">
+                🔄
+              </button>
+            </div>
           </div>
 
           <div className="filter-tabs">
@@ -736,15 +796,23 @@ function IncidentsView({
   );
 }
 
-// Threat Intel View Component (keeping your existing code structure)
-function ThreatIntelView() {
+// Threat Intel View Component
+function ThreatIntelView({ onRefresh, lastRefresh }: { onRefresh: () => void, lastRefresh: Date }) {
   const [activeTab, setActiveTab] = useState<'iocs' | 'actors' | 'campaigns'>('iocs');
 
   return (
     <div className="threatintel-view">
       <div className="header">
         <h1>Threat Intelligence</h1>
-        <button className="btn-primary">+ Add IOC</button>
+        <div style={{display: 'flex', alignItems: 'center', gap: '16px'}}>
+          <button className="btn-primary">+ Add IOC</button>
+          <div className="timestamp">
+            Last updated: {lastRefresh.toLocaleTimeString()}
+          </div>
+          <button className="refresh-btn" onClick={onRefresh} title="Refresh threat intel">
+            🔄
+          </button>
+        </div>
       </div>
 
       <div className="filter-tabs">
@@ -894,37 +962,159 @@ function ThreatIntelView() {
   );
 }
 
-// Analytics View Component (keeping your existing code structure)
-function AnalyticsView() {
+// Analytics View Component
+function AnalyticsView({ onRefresh, lastRefresh }: { onRefresh: () => void, lastRefresh: Date }) {
   return (
     <div className="analytics-view">
       <div className="header">
         <h1>Security Analytics</h1>
-        <select className="timeframe-select">
-          <option>Last 7 Days</option>
-          <option>Last 30 Days</option>
-          <option>Last 90 Days</option>
-        </select>
+        <div style={{display: 'flex', alignItems: 'center', gap: '16px'}}>
+          <select className="timeframe-select">
+            <option>Last 7 Days</option>
+            <option>Last 30 Days</option>
+            <option>Last 90 Days</option>
+          </select>
+          <div className="timestamp">
+            Last updated: {lastRefresh.toLocaleTimeString()}
+          </div>
+          <button className="refresh-btn" onClick={onRefresh} title="Refresh analytics">
+            🔄
+          </button>
+        </div>
       </div>
 
       {/* Alert Trend Chart */}
       <div className="chart-section">
-        <h2>Alert Trend</h2>
+        <h2>Alert Trend Analysis</h2>
         <div className="chart-container">
-          <svg viewBox="0 0 800 300" className="trend-chart">
-            <polyline
-              points="0,150 100,120 200,100 300,140 400,80 500,110 600,60 700,90 800,70"
-              fill="none"
-              stroke="#888"
-              strokeWidth="3"
+          <svg viewBox="0 0 900 400" className="trend-chart">
+            {/* Grid lines */}
+            <line x1="80" y1="50" x2="80" y2="320" stroke="#333" strokeWidth="2" />
+            <line x1="80" y1="320" x2="850" y2="320" stroke="#333" strokeWidth="2" />
+            
+            {/* Horizontal grid lines */}
+            <line x1="80" y1="50" x2="850" y2="50" stroke="#222" strokeWidth="1" strokeDasharray="5,5" />
+            <line x1="80" y1="95" x2="850" y2="95" stroke="#222" strokeWidth="1" strokeDasharray="5,5" />
+            <line x1="80" y1="140" x2="850" y2="140" stroke="#222" strokeWidth="1" strokeDasharray="5,5" />
+            <line x1="80" y1="185" x2="850" y2="185" stroke="#222" strokeWidth="1" strokeDasharray="5,5" />
+            <line x1="80" y1="230" x2="850" y2="230" stroke="#222" strokeWidth="1" strokeDasharray="5,5" />
+            <line x1="80" y1="275" x2="850" y2="275" stroke="#222" strokeWidth="1" strokeDasharray="5,5" />
+            
+            {/* Y-axis labels */}
+            <text x="65" y="55" fill="#888" fontSize="12" textAnchor="end">8</text>
+            <text x="65" y="100" fill="#888" fontSize="12" textAnchor="end">7</text>
+            <text x="65" y="145" fill="#888" fontSize="12" textAnchor="end">6</text>
+            <text x="65" y="190" fill="#888" fontSize="12" textAnchor="end">5</text>
+            <text x="65" y="235" fill="#888" fontSize="12" textAnchor="end">4</text>
+            <text x="65" y="280" fill="#888" fontSize="12" textAnchor="end">3</text>
+            <text x="65" y="325" fill="#888" fontSize="12" textAnchor="end">0</text>
+            
+            {/* Y-axis title */}
+            <text x="20" y="180" fill="#aaa" fontSize="13" fontWeight="600" transform="rotate(-90 20 180)" textAnchor="middle">
+              Alert Count
+            </text>
+            
+            {/* Data line with gradient effect */}
+            <defs>
+              <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style={{stopColor: '#666', stopOpacity: 1}} />
+                <stop offset="100%" style={{stopColor: '#aaa', stopOpacity: 1}} />
+              </linearGradient>
+              <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style={{stopColor: '#888', stopOpacity: 0.3}} />
+                <stop offset="100%" style={{stopColor: '#888', stopOpacity: 0}} />
+              </linearGradient>
+            </defs>
+            
+            {/* Area under the line */}
+            <polygon
+              points="80,230 190,185 300,140 410,185 520,95 630,140 740,50 850,95 850,320 80,320"
+              fill="url(#areaGradient)"
             />
-            <line x1="0" y1="290" x2="800" y2="290" stroke="#333" strokeWidth="1" />
-            <line x1="0" y1="0" x2="0" y2="290" stroke="#333" strokeWidth="1" />
-            <text x="100" y="310" fill="#888" fontSize="12">07:00</text>
-            <text x="300" y="310" fill="#888" fontSize="12">08:00</text>
-            <text x="500" y="310" fill="#888" fontSize="12">09:00</text>
-            <text x="700" y="310" fill="#888" fontSize="12">10:00</text>
+            
+            {/* Main data line */}
+            <polyline
+              points="80,230 190,185 300,140 410,185 520,95 630,140 740,50 850,95"
+              fill="none"
+              stroke="url(#lineGradient)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            
+            {/* Data points */}
+            <circle cx="80" cy="230" r="5" fill="#888" stroke="#000" strokeWidth="2" />
+            <circle cx="190" cy="185" r="5" fill="#888" stroke="#000" strokeWidth="2" />
+            <circle cx="300" cy="140" r="5" fill="#888" stroke="#000" strokeWidth="2" />
+            <circle cx="410" cy="185" r="5" fill="#888" stroke="#000" strokeWidth="2" />
+            <circle cx="520" cy="95" r="5" fill="#888" stroke="#000" strokeWidth="2" />
+            <circle cx="630" cy="140" r="5" fill="#888" stroke="#000" strokeWidth="2" />
+            <circle cx="740" cy="50" r="5" fill="#888" stroke="#000" strokeWidth="2" />
+            <circle cx="850" cy="95" r="5" fill="#888" stroke="#000" strokeWidth="2" />
+            
+            {/* X-axis labels */}
+            <text x="80" y="345" fill="#888" fontSize="12" textAnchor="middle">07:00</text>
+            <text x="190" y="345" fill="#888" fontSize="12" textAnchor="middle">08:00</text>
+            <text x="300" y="345" fill="#888" fontSize="12" textAnchor="middle">09:00</text>
+            <text x="410" y="345" fill="#888" fontSize="12" textAnchor="middle">10:00</text>
+            <text x="520" y="345" fill="#888" fontSize="12" textAnchor="middle">11:00</text>
+            <text x="630" y="345" fill="#888" fontSize="12" textAnchor="middle">12:00</text>
+            <text x="740" y="345" fill="#888" fontSize="12" textAnchor="middle">13:00</text>
+            <text x="850" y="345" fill="#888" fontSize="12" textAnchor="middle">14:00</text>
+            
+            {/* X-axis title */}
+            <text x="465" y="375" fill="#aaa" fontSize="13" fontWeight="600" textAnchor="middle">
+              Time of Day
+            </text>
+            
+            {/* Peak indicator */}
+            <text x="740" y="35" fill="#aaa" fontSize="11" textAnchor="middle">Peak: 8 alerts</text>
+            <line x1="740" y1="40" x2="740" y2="47" stroke="#888" strokeWidth="1" strokeDasharray="2,2" />
           </svg>
+        </div>
+        
+        {/* Chart Legend */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '24px',
+          marginTop: '16px',
+          fontSize: '13px',
+          color: '#888'
+        }}>
+          <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+            <div style={{width: '20px', height: '3px', background: 'linear-gradient(90deg, #666, #aaa)'}}></div>
+            <span>Alert Volume</span>
+          </div>
+          <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+            <div style={{width: '8px', height: '8px', borderRadius: '50%', background: '#888', border: '2px solid #000'}}></div>
+            <span>Hourly Data Points</span>
+          </div>
+        </div>
+        
+        {/* Chart Insights */}
+        <div style={{
+          marginTop: '20px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '16px'
+        }}>
+          <div className="info-card">
+            <label>Average Alerts/Hour</label>
+            <div style={{fontSize: '20px', fontWeight: '600', marginTop: '4px'}}>5.4</div>
+          </div>
+          <div className="info-card">
+            <label>Peak Hour</label>
+            <div style={{fontSize: '20px', fontWeight: '600', marginTop: '4px'}}>13:00 (8 alerts)</div>
+          </div>
+          <div className="info-card">
+            <label>Trend</label>
+            <div style={{fontSize: '20px', fontWeight: '600', marginTop: '4px', color: '#888'}}>↗ +12% vs yesterday</div>
+          </div>
+          <div className="info-card">
+            <label>Lowest Activity</label>
+            <div style={{fontSize: '20px', fontWeight: '600', marginTop: '4px'}}>07:00 (4 alerts)</div>
+          </div>
         </div>
       </div>
 
@@ -1014,8 +1204,8 @@ function AnalyticsView() {
   );
 }
 
-// Playbook Modal Component (keeping your existing code)
-function PlaybookModal({ playbook, incident, onClose }: { playbook: Playbook, incident: Incident | null, onClose: () => void }) {
+// Playbook Modal Component
+function PlaybookModal({ playbook, incident, onClose, onRefresh }: { playbook: Playbook, incident: Incident | null, onClose: () => void, onRefresh: () => void }) {
   const [expandedPhase, setExpandedPhase] = useState<string | null>(playbook.steps[0]?.phase || null);
   const [completedActions, setCompletedActions] = useState<Set<string>>(new Set());
 
@@ -1044,7 +1234,12 @@ function PlaybookModal({ playbook, incident, onClose }: { playbook: Playbook, in
               <span>Estimated Duration: {playbook.estimated_duration}</span>
             </div>
           </div>
-          <button className="close-btn" onClick={onClose}>✕</button>
+          <div style={{display: 'flex', gap: '8px'}}>
+            <button className="refresh-btn" onClick={onRefresh} title="Refresh playbook">
+              🔄
+            </button>
+            <button className="close-btn" onClick={onClose}>✕</button>
+          </div>
         </div>
 
         {/* Progress Bar */}

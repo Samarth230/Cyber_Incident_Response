@@ -34,8 +34,50 @@ body {
 .sidebar-title {
   font-size: 20px;
   font-weight: 600;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   color: #ffffff;
+}
+
+/* Offline Mode Indicator */
+.offline-indicator {
+  background: #0a0a0a;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 20px;
+}
+
+.offline-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background: #00ff88;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.offline-description {
+  font-size: 11px;
+  color: #888;
+  padding-left: 16px;
 }
 
 .sidebar-nav {
@@ -91,7 +133,45 @@ body {
 
 .timestamp {
   color: #666;
-  font-size: 14px;
+  font-size: 13px;
+}
+
+/* Refresh Button */
+.refresh-btn {
+  background: #1a1a1a;
+  border: 1px solid #444;
+  color: #ffffff;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.refresh-btn:hover {
+  border-color: #666;
+  background: #222;
+}
+
+.refresh-btn:active {
+  transform: scale(0.95);
+}
+
+.refresh-btn.spinning {
+  animation: spin 1s linear;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Search Input */
@@ -624,7 +704,8 @@ body {
 
 .chart-container {
   width: 100%;
-  height: 300px;
+  height: 400px;
+  margin-bottom: 8px;
 }
 
 .trend-chart {
