@@ -505,6 +505,40 @@ function DashboardView({
         </div>
       </div>
 
+            <div className="section">
+        <h2>Banking-Specific Monitoring</h2>
+        <div className="metrics-grid">
+          <div className="metric-card">
+            <div className="metric-label">SWIFT Messages Analyzed</div>
+            <div className="metric-value">1,247</div>
+            <div style={{fontSize: '12px', color: '#888', marginTop: '8px'}}>
+              ⚠️ 2 anomalies detected
+            </div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">Wire Transfers Monitored</div>
+            <div className="metric-value">847</div>
+            <div style={{fontSize: '12px', color: '#888', marginTop: '8px'}}>
+              ✓ All within policy
+            </div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">ATM Network Status</div>
+            <div className="metric-value">124</div>
+            <div style={{fontSize: '12px', color: '#888', marginTop: '8px'}}>
+              ✓ No suspicious activity
+            </div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">Regulatory Compliance</div>
+            <div className="metric-value">98.5%</div>
+            <div style={{fontSize: '12px', color: '#888', marginTop: '8px'}}>
+              ✓ PCI-DSS, SOX, GDPR
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Recent Incidents */}
       <div className="section">
         <h2>Recent Incidents</h2>
